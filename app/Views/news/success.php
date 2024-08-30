@@ -1,0 +1,1 @@
+<h2><?= var_dump($title); ?></h2>

@@ -1,0 +1,1 @@
+<h2><?= var_dump($new_info); ?></h2>
