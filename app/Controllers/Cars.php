@@ -18,7 +18,13 @@ class Cars extends BaseController
         return view('cars/index', $data);
     }
 
-    public function searchById(int $car = 1)
+
+    public function addNew()
+    {
+        $model = new CarsModel();
+    }
+
+    public function searchById(int $car)
     {
         $model = new CarsModel();
         $data = ['car' => $model->getCarById($car)];

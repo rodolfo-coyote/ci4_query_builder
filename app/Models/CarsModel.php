@@ -19,6 +19,8 @@ class CarsModel extends Model
     {
         return $this->db->affectedRows();
     }
+
+
     public function getAllCars()
     {
         $builder = $this->getBuilder();
@@ -29,7 +31,10 @@ class CarsModel extends Model
     public function getCarById($carId = 1)
     {
         $builder = $this->getBuilder();
-        $query = $builder->getWhere(['id' => $carId]);
+        $builder->select('name,model,cost');
+        $builder->where(['id' => $carId]);
+
+        $query = $builder->get();
         return $query->getResultObject();
     }
 
