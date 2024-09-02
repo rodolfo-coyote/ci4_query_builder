@@ -6,6 +6,7 @@ use App\Controllers\News;
 use App\Controllers\Cars;
 use App\Controllers\Login;
 use App\Controllers\RedisAuth;
+use App\Controllers\Customer;
 
 /**
  * @var RouteCollection $routes
@@ -30,6 +31,17 @@ $routes->get('pages', [Pages::class, 'index']);
 
 
 $routes->group("api", function ($routes) {
-    $routes->post("login", [Login::class, 'index']);
+    $routes->get("login", [Login::class, 'index']);
+    $routes->post("login", [Login::class, 'login']);
     $routes->get("redisauth", [RedisAuth::class, 'index']);
+    $routes->delete("logout", [RedisAuth::class, 'logout']);
+});
+
+
+$routes->group("customer", function ($routes) {
+    $routes->get("index", [Customer::class, 'index']);
+    $routes->get("profile", [Customer::class, 'profile']);
+    $routes->delete("logout", [RedisAuth::class, 'logout']);
+
+    $routes->get("/(:segment)", [Customer::class, 'index']);
 });

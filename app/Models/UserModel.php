@@ -47,16 +47,19 @@ class UserModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
+    protected $session;
 
-    protected function getBuilder()
+    public function __construct()
     {
-        return $this->db->table($this->table);
+        parent::__construct();
+        $this->builder = $this->db->table($this->table);
+        $this->session = \Config\Services::session();
     }
+
 
     public function getUserByEmail($email)
     {
-        $builder = $this->getBuilder();
-        $query = $builder->select('id')
+        $query = $this->builder->select('id')
             ->where('email', $email)
             ->get();
         return $query->getRow();
@@ -64,8 +67,7 @@ class UserModel extends Model
 
     public function verifyPassword($email, $password)
     {
-        $builder = $this->getBuilder();
-        $query = $builder->select('password')
+        $query = $this->builder->select('password')
             ->where('email', $email)
             ->get();
 
@@ -75,11 +77,20 @@ class UserModel extends Model
         return password_verify($password, $hashedPassword);
     }
 
-    public function getUserJwt($email)
+    public function getUserInfo($email)
     {
+        $query = $this->builder->select('id,fullname,password')
+            ->where('email', $email)
+            ->get();
+
+        $result = $query->getRow();
+        $userId = $result->id;
+        $userName = $result->fullname;
+        // $last_login = $result->last_login;
+
         $key = getenv('JWT_SECRET');
         $iat = time();
-        $exp = $iat + 60;
+        $exp = $iat + 6000;
 
         $payload = [
             "iss" => "Issuer of the JWT",
@@ -92,19 +103,50 @@ class UserModel extends Model
 
         $token = JWT::encode($payload, $key, 'HS256');
 
-        return $token;
+        $userInfo = new \stdClass();
+
+        $userInfo->id = $userId;
+        $userInfo->fullname = $userName;
+        $userInfo->token = $token;
+        $userInfo->expires_at = $exp;
+        //$userInfo->last_login = $last_login;
+
+        return $userInfo;
     }
 
-    public function tokenToRedis($token)
+    public function sessionToRedis($userId, $token, $expires_at, $fullname)
     {
-        $redis = \Config\Services::redis();
 
-        if (!$redis->hexists('stored_token2', 'token')) {
-            // Almacenar datos en el hash
-            $redis->hset('stored_token2', 'token', $token);
-            $redis->hset('stored_token2', 'expires_at', time() + 60);
-        }
+        $userInfo = [
+            'id' => $userId,
+            'token' => $token,
+            'expires_at' => $expires_at,
+            'fullname' => $fullname,
+        ];
+
+        $this->session->set('user_info', serialize($userInfo));
 
         return true;
+    }
+
+    public function verifyUserIsLogged()
+    {
+        if (!$this->session->has('user_info')) {
+            return false;
+        }
+
+        $serializedData = $this->session->get('user_info');
+
+        return $serializedData;
+    }
+
+    public function destroySession()
+    {
+        try {
+            $this->session->destroy();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

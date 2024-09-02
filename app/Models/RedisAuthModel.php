@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use CodeIgniter\API\ResponseTrait;
+use CodeIgniter\Config\Services;
+
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use CodeIgniter\Model;
 
 class RedisAuthModel extends Model
 {
-    public function searchToken()
+    protected $session;
+
+    public function __construct()
     {
-        $redis = \Config\Services::redis();
-
-        $token = $redis->hget('stored_token2', 'token');
-        //$expiresAt = $redis->hget('stored_token', 'expires_at');
-
-        return $token;
+        parent::__construct();
+        $this->session = \Config\Services::session();
     }
 }
